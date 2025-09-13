@@ -1,0 +1,16 @@
+
+
+# ======== Connection Settings ========
+DUMP_HOST = 'localhost'
+DUMP_PORT = 30005
+ASTERIX_HOST = 'localhost'
+ASTERIX_PORT = 4000
+
+# ======== Calibration Settings ========
+LAT_REF = 52.3672  # Station latitude
+LON_REF = 16.8463  # Station longitude
+LAT_LON_RANGE = 2.0  # ±2°
+SAC = 48  # System Area Code (Poland)
+SIC = 1   # System Identification Code
+SERVICE_ID = 0x00
+CACHE_TIMEOUT = 10

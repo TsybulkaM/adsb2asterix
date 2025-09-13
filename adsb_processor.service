@@ -1,0 +1,16 @@
+[Unit]
+Description=ADS-B to ASTERIX Processor
+Wants=dump1090-fa.service
+After=network.target dump1090-fa.service
+
+[Service]
+User=mikita
+WorkingDirectory=/opt/adsb2asterix
+
+ExecStart=/opt/adsb2asterix/venv/bin/python3 /opt/adsb2asterix/scr/adsb2asterix/main.py
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
