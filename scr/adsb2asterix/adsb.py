@@ -8,7 +8,7 @@ from asterix import AsterixCat021Message
 from globals_app import (
     SAC, SIC,
     LAT_REF, LON_REF, LAT_LON_RANGE,
-    CACHE_TIMEOUT
+    CACHE_TIMEOUT, DEBUG
 )
 
 class ADSBRetransmitter(TcpClient):
@@ -45,7 +45,6 @@ class ADSBRetransmitter(TcpClient):
 
             if tc == 19:
                 velocity = adsb.velocity(msg)
-                print(f"Velocity: {velocity}")
             elif 9 <= tc <= 18:
                 oe = adsb.oe_flag(msg)
                 
@@ -80,7 +79,7 @@ class ADSBRetransmitter(TcpClient):
             
             elif 1 <= tc <= 4:
                 callsign = adsb.callsign(msg)
-            
+                
             if lat is not None and lon is not None:
                 if not ((LAT_REF - LAT_LON_RANGE <= lat <= LAT_REF + LAT_LON_RANGE and
                     LON_REF - LAT_LON_RANGE <= lon <= LON_REF + LAT_LON_RANGE)):
@@ -97,7 +96,8 @@ class ADSBRetransmitter(TcpClient):
             if self.udp_socket and encoded_packet:
                 self.udp_socket.sendto(encoded_packet, (self.tx_host, self.tx_port))
 
-            print(f"{asterix_packet} - {encoded_packet.hex().upper()}")
+            if DEBUG:
+                print(f"{asterix_packet} - {encoded_packet.hex().upper()}")
 
         except Exception as e:
             print(f"Error processing message {msg}: {e}")
@@ -126,4 +126,3 @@ class ADSBRetransmitter(TcpClient):
     def close(self):
         if self.udp_socket:
             self.udp_socket.close()
-        super().close()

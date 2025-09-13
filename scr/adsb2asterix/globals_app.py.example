@@ -14,3 +14,6 @@ SAC = 48  # System Area Code (Poland)
 SIC = 1   # System Identification Code
 SERVICE_ID = 0x00
 CACHE_TIMEOUT = 10
+
+# ========= Optional Settings ========
+DEBUG = False

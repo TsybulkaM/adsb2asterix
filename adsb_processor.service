@@ -4,7 +4,7 @@ Wants=dump1090-fa.service
 After=network.target dump1090-fa.service
 
 [Service]
-User=mikita
+User=devops
 WorkingDirectory=/opt/adsb2asterix
 
 ExecStart=/opt/adsb2asterix/venv/bin/python3 /opt/adsb2asterix/scr/adsb2asterix/main.py
