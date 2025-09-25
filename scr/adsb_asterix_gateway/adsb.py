@@ -12,7 +12,7 @@ from globals_app import (
     CACHE_TIMEOUT, DEBUG
 )
 
-class ADSBRetransmitter(TcpClient):
+class AdsbAsterixGateway(TcpClient):
     def __init__(self, rx_host, rx_port, tx_host, tx_port):
         super().__init__(host=rx_host, port=rx_port, datatype='beast')
         self.position_cache = {}

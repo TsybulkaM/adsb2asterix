@@ -5,9 +5,9 @@ After=network.target dump1090-fa.service
 
 [Service]
 User=devops
-WorkingDirectory=/opt/adsb2asterix
+WorkingDirectory=/opt/adsb-asterix-gateway
 
-ExecStart=/opt/adsb2asterix/venv/bin/python3 /opt/adsb2asterix/scr/adsb2asterix/main.py
+ExecStart=/opt/adsb-asterix-gateway/venv/bin/python3 /opt/adsb-asterix-gateway/scr/adsb-asterix-gateway/main.py
 
 Restart=on-failure
 RestartSec=5
