@@ -3,6 +3,7 @@ import time
 import pyModeS as pms
 from pyModeS.extra.tcpclient import TcpClient
 from pyModeS.decoder import adsb
+from pyModeS.decoder import bds
 
 from asterix import AsterixCat021Message
 from globals_app import (
@@ -26,7 +27,10 @@ class ADSBRetransmitter(TcpClient):
         print("=" * 40)
 
 
-    def process_adsb_message(self, msg, timestamp):
+    def process_adsb_to_asterix(self, msg, timestamp):
+        if DEBUG:
+            print(f"Received ADS-B message: {msg} at {timestamp}")
+
         if len(msg) != 28:
             return
         
@@ -78,7 +82,8 @@ class ADSBRetransmitter(TcpClient):
                     lat, lon = position
             
             elif 1 <= tc <= 4:
-                callsign = adsb.callsign(msg)
+                callsign = bds.bds08.callsign(msg).strip()
+                emitter_category = bds.bds08.category(msg)
                 
             if lat is not None and lon is not None:
                 if not ((LAT_REF - LAT_LON_RANGE <= lat <= LAT_REF + LAT_LON_RANGE and
@@ -93,12 +98,11 @@ class ADSBRetransmitter(TcpClient):
                 callsign=callsign, emitter_category=emitter_category
             )
             encoded_packet = asterix_packet.encode()
-            if self.udp_socket and encoded_packet:
-                self.udp_socket.sendto(encoded_packet, (self.tx_host, self.tx_port))
-
+            
             if DEBUG:
                 print(f"{asterix_packet} - {encoded_packet.hex().upper()}")
 
+            return encoded_packet
         except Exception as e:
             print(f"Error processing message {msg}: {e}")
 
@@ -108,7 +112,9 @@ class ADSBRetransmitter(TcpClient):
         
         for msg, timestamp in messages:
             if isinstance(msg, str) and len(msg) == 28:
-                self.process_adsb_message(msg, timestamp)
+                encoded_packet = self.process_adsb_to_asterix(msg, timestamp)
+                if self.udp_socket and encoded_packet:
+                    self.udp_socket.sendto(encoded_packet, (self.tx_host, self.tx_port))
 
 
     def _cleanup_cache(self):

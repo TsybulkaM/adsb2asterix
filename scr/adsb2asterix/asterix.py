@@ -94,7 +94,7 @@ class AsterixCat021Message:
     def _encode_callsign(self):
         char_map = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ## ###############0123456789######"
         encoded = 0
-        callsign = self.callsign_str.upper().strip().ljust(8, ' ')[:8]
+        callsign = self.callsign_str.upper().strip().replace('_', ' ').ljust(8, ' ')[:8]
         for char in callsign:
             encoded <<= 6
             encoded |= char_map.index(char)

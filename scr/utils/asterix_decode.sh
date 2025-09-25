@@ -12,3 +12,5 @@ echo "0000 $formatted_hex" > hex.txt
 
 text2pcap -u 40001,40001 hex.txt asterix.pcap
 tshark -r asterix.pcap -d udp.port==40001,asterix -V
+
+rm hex.txt asterix.pcap
