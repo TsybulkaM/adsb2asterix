@@ -1,5 +1,9 @@
 
 all: build
 
-build-bin:
-	poetry run pyinstaller --onefile scr/adsb2asterix/main.py
+lint:
+	poetry run ruff check .
+
+test:
+	poetry run pytest -s tests/
+

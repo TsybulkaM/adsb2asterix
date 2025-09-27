@@ -93,4 +93,4 @@ hex.txt
 asterix.pcap
 
 # Local settings
-scr/adsb2asterix/globals_app.py
+scr/asterix_gateway/globals_app.py

@@ -1,7 +1,7 @@
 [project]
-name = "adsb2asterix"
+name = "asterix-gateway"
 version = "0.1.0"
-description = ""
+description = "A gateway for converting ADS-B messages to ASTERIX CAT021 format, supporting real-time aircraft surveillance data processing and integration."
 authors = [
     {name = "Mikita Tsybulka",email = "nikita.tsybulka@gmail.com"}
 ]
@@ -17,7 +17,6 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
-pyinstaller = "^6.16.0"
 ruff = "^0.13.1"
 pytest = "^8.4.2"
 

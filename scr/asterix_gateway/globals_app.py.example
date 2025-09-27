@@ -1,15 +1,13 @@
 
-
 # ======== Connection Settings ========
-DUMP_HOST = 'prylada.taile241c6.ts.net'
-DUMP_PORT = 30005
+DUMP_HOST = 'localhost'
+DUMP_PORT = 30005 # dump9010 default port
 ASTERIX_HOST = 'localhost'
-#ASTERIX_HOST = 'udp.prylada.com'
-ASTERIX_PORT = 6439
+ASTERIX_PORT = 4000
 
 # ======== Calibration Settings ========
-LAT_REF = 52.3672  # Station latitude
-LON_REF = 16.8463  # Station longitude
+LAT_REF = 52.4057  # Station latitude
+LON_REF = 16.9313  # Station longitude
 LAT_LON_RANGE = 2.0  # ±2°
 SAC = 48  # System Area Code (Poland)
 SIC = 1   # System Identification Code
@@ -17,4 +15,5 @@ SERVICE_ID = 0x00
 CACHE_TIMEOUT = 10
 
 # ========= Optional Settings ========
-DEBUG = True
+DEBUG = False
+DEV = False

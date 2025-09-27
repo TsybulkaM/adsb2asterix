@@ -9,6 +9,6 @@ COPY poetry.lock pyproject.toml ./
 
 RUN poetry install --no-interaction --no-ansi --no-root
 
-COPY ./src/adsb-asterix-gateway /app/adsb-asterix-gateway
+COPY ./src/asterix_gateway /app/asterix_gateway
 
-CMD ["poetry", "run", "python", "-m", "adsb-asterix-gateway.main"]
+CMD ["poetry", "run", "python", "-m", "asterix_gateway.main"]
