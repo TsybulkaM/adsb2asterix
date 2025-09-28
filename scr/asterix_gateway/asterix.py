@@ -135,16 +135,20 @@ class AsterixCat021Message:
     def _encode_ground_vector(self):
         speed_kts = self.velocity[0]
         track_deg = self.velocity[1]
-        
-        speed_resolution = 2**-14 # NM/s
-        track_resolution = 360.0 / (2**16) # degrees
-        
-        speed_in_nms = speed_kts * (0.514444 / 1852)
-        
-        scaled_speed = int(speed_in_nms / speed_resolution)
-        scaled_track = int(track_deg / track_resolution)
-        
-        return struct.pack('>HH', scaled_speed, scaled_track)
+
+        try:
+            speed_resolution = 2**-14 # NM/s
+            track_resolution = 360.0 / (2**16) # degrees
+            speed_in_nms = speed_kts * (0.514444 / 1852)
+            scaled_speed = int(speed_in_nms / speed_resolution)
+            scaled_track = int(track_deg / track_resolution)
+
+            scaled_speed = max(0, min(scaled_speed, 65535))
+            scaled_track = max(0, min(scaled_track, 65535))
+            return struct.pack('>HH', scaled_speed, scaled_track)
+        except Exception as e:
+            print(f"Error encoding ground vector: {e}, values: speed_kts={speed_kts}, track_deg={track_deg}")
+            return b'\x00\x00\x00\x00'
 
     def _encode_vertical_rate(self):
         vert_rate_fpm = self.velocity[2]

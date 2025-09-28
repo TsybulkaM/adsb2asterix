@@ -39,8 +39,11 @@ def process_sbs_to_asterix(line: str):
         if len(parts) > 8 and parts[8]:
             emitter_category = _map_aircraft_type_to_category(parts[8])
 
-        if latitude is not None and longitude is not None and POSITION_LIMIT:
-            if not ((LAT_REF - LAT_LON_RANGE <= latitude <= LAT_REF + LAT_LON_RANGE and
+        if latitude is not None and longitude is not None:
+            if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+                print(f"Invalid position: {latitude}, {longitude}")
+                return
+            if POSITION_LIMIT and not ((LAT_REF - LAT_LON_RANGE <= latitude <= LAT_REF + LAT_LON_RANGE and
                 LON_REF - LAT_LON_RANGE <= longitude <= LON_REF + LAT_LON_RANGE)):
                 print(f"Position out of range: {latitude}, {longitude}")
                 return

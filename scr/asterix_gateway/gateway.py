@@ -71,7 +71,6 @@ class SBSAsterixGateway:
         print("=" * 40)
 
         self._sock = None
-        self._buffer = b""
 
     def connect(self):
         try:
@@ -85,33 +84,32 @@ class SBSAsterixGateway:
         if not self._sock:
             self.connect()
 
+        file_handle = self._sock.makefile('rb')
+
         while True:
             try:
-                data = self._sock.recv(4096)
-                if not data:
-                    print("Connection closed.")
+                line_bytes = file_handle.readline()
+                if not line_bytes:
                     break
                 
-                self._buffer += data
-                
-                while b'\n' in self._buffer:
-                    line_bytes, self._buffer = self._buffer.split(b'\n', 1)
-                    line_str = line_bytes.decode('utf-8').strip()
+                line_str = line_bytes.decode('utf-8').strip()
 
-                    if DEBUG:
-                        print(f"Received SBS message: {line_str}")
-                    
-                    encoded_packet = process_sbs_to_asterix(line_str)
-                    if self.udp_socket and encoded_packet:
-                        self.udp_socket.sendto(encoded_packet, (self.tx_host, self.tx_port))
+                if DEBUG:
+                    print(f"Received SBS message: {line_str}")
+                
+                # Ваша логика обработки
+                encoded_packet = process_sbs_to_asterix(line_str)
+                if self.udp_socket and encoded_packet:
+                    self.udp_socket.sendto(encoded_packet, (self.tx_host, self.tx_port))
 
             except socket.error as e:
-                print(f"Error of socket: {e}")
+                print(f"Socket error: {e}")
                 break
             except KeyboardInterrupt:
-                print("\nDisconnecting...")
+                print("Interrupt.")
                 break
         
+        file_handle.close()
         self.close()
 
     def close(self):
