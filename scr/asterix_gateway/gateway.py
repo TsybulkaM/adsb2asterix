@@ -4,13 +4,14 @@ import time
 from pyModeS.extra.tcpclient import TcpClient
 
 from mode_s.common import process_mode_s_to_asterix
+from sbs import process_sbs_to_asterix
 
 from globals_app import (
     LAT_REF, LON_REF, LAT_LON_RANGE,
     CACHE_TIMEOUT, DEBUG
 )
 
-class AsterixGateway(TcpClient):
+class AdsbAsterixGateway(TcpClient):
     def __init__(self, rx_host, rx_port, tx_host, tx_port):
         super().__init__(host=rx_host, port=rx_port, datatype='beast')
         self.position_cache = {}
@@ -52,3 +53,69 @@ class AsterixGateway(TcpClient):
     def close(self):
         if self.udp_socket:
             self.udp_socket.close()
+
+
+class SBSAsterixGateway:
+    def __init__(self, rx_host, rx_port, tx_host, tx_port):
+        self.rx_host = rx_host
+        self.rx_port = rx_port
+
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.tx_host = tx_host
+        self.tx_port = tx_port
+
+        print("=" * 40)
+        print(f"Source: {rx_host}:{rx_port}")
+        print(f"Target: {tx_host}:{tx_port}")
+        print(f"Region: {LAT_REF:.4f}, {LON_REF:.4f} (±{LAT_LON_RANGE}°)")
+        print("=" * 40)
+
+        self._sock = None
+        self._buffer = b""
+
+    def connect(self):
+        try:
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._sock.connect((self.rx_host, self.rx_port))
+        except socket.error as e:
+            print(f"Error connecting: {e}")
+            self._sock = None
+
+    def run(self):
+        if not self._sock:
+            self.connect()
+
+        while True:
+            try:
+                data = self._sock.recv(4096)
+                if not data:
+                    print("Connection closed.")
+                    break
+                
+                self._buffer += data
+                
+                while b'\n' in self._buffer:
+                    line_bytes, self._buffer = self._buffer.split(b'\n', 1)
+                    line_str = line_bytes.decode('utf-8').strip()
+
+                    if DEBUG:
+                        print(f"Received SBS message: {line_str}")
+                    
+                    encoded_packet = process_sbs_to_asterix(line_str)
+                    if self.udp_socket and encoded_packet:
+                        self.udp_socket.sendto(encoded_packet, (self.tx_host, self.tx_port))
+
+            except socket.error as e:
+                print(f"Error of socket: {e}")
+                break
+            except KeyboardInterrupt:
+                print("\nDisconnecting...")
+                break
+        
+        self.close()
+
+    def close(self):
+        if self._sock:
+            self._sock.close()
+            self._sock = None
+            print("Connection closed.")

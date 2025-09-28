@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from gateway import AsterixGateway
+from gateway import AdsbAsterixGateway, SBSAsterixGateway
 from globals_app import (
     DUMP_HOST, DUMP_PORT,
     ASTERIX_HOST, ASTERIX_PORT,
@@ -10,7 +10,7 @@ from globals_app import (
 if __name__ == "__main__":
     client = None
     try:
-        client = AsterixGateway(
+        client = SBSAsterixGateway(
             DUMP_HOST, DUMP_PORT, 
             ASTERIX_HOST, ASTERIX_PORT
         )

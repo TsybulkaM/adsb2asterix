@@ -5,7 +5,7 @@ from asterix import AsterixCat021Message
 
 from globals_app import (
     SAC, SIC,
-    LAT_REF, LON_REF, LAT_LON_RANGE,
+    LAT_REF, LON_REF, LAT_LON_RANGE, POSITION_LIMIT
     CACHE_TIMEOUT, DEBUG
 )
 
@@ -62,7 +62,7 @@ def process_adsb_to_asterix(msg, timestamp):
             callsign = bds.bds08.callsign(msg).strip()
             emitter_category = bds.bds08.category(msg)
             
-        if lat is not None and lon is not None:
+        if lat is not None and lon is not None and POSITION_LIMIT:
             if not ((LAT_REF - LAT_LON_RANGE <= lat <= LAT_REF + LAT_LON_RANGE and
                 LON_REF - LAT_LON_RANGE <= lon <= LON_REF + LAT_LON_RANGE)):
                 print(f"Position out of range: {lat}, {lon}")

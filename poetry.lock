@@ -112,6 +112,21 @@ files = [
 ]
 
 [[package]]
+name = "envsh"
+version = "0.1.2"
+description = "A Python library for loading environment variables from shell scripts with type-safe reading capabilities"
+optional = false
+python-versions = ">=3.11"
+groups = ["main"]
+files = [
+    {file = "envsh-0.1.2-py3-none-any.whl", hash = "sha256:63dd7b548aa8eb26862190149a3cd93ff7763bfbc57b3888ae91aca8589d84b4"},
+    {file = "envsh-0.1.2.tar.gz", hash = "sha256:ec26816e40d4e188221cae1ae4bd8e017a3f2cdb7084e03f720c4fbae2a5460f"},
+]
+
+[package.extras]
+dev = ["pytest (>=6.0)", "pytest-cov (>=2.0)"]
+
+[[package]]
 name = "iniconfig"
 version = "2.1.0"
 description = "brain-dead simple config-ini parsing"
@@ -464,4 +479,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "afeeefe81906131c2566e7cb71ce25b983ed69958539c029a0ab80fdc213b404"
+content-hash = "40763e54e64fcf51e058876e20b84bb1b35d74f18214ef577c4f42a3cde8acb2"
