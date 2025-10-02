@@ -7,7 +7,7 @@ from mode_s.common import process_mode_s_to_asterix
 from sbs import process_sbs_to_asterix
 
 from globals_app import (
-    LAT_REF, LON_REF, LAT_LON_RANGE,
+    LAT_REF, LON_REF,
     CACHE_TIMEOUT, DEBUG
 )
 
@@ -22,7 +22,7 @@ class AdsbAsterixGateway(TcpClient):
         print("=" * 40)
         print(f"Source: {rx_host}:{rx_port}")
         print(f"Target: {tx_host}:{tx_port}")
-        print(f"Region: {LAT_REF:.4f}, {LON_REF:.4f} (±{LAT_LON_RANGE}°)")
+        print(f"Region: {LAT_REF:.4f}, {LON_REF:.4f}")
         print("=" * 40)
 
 
@@ -67,7 +67,7 @@ class SBSAsterixGateway:
         print("=" * 40)
         print(f"Source: {rx_host}:{rx_port}")
         print(f"Target: {tx_host}:{tx_port}")
-        print(f"Region: {LAT_REF:.4f}, {LON_REF:.4f} (±{LAT_LON_RANGE}°)")
+        print(f"Region: {LAT_REF:.4f}, {LON_REF:.4f}")
         print("=" * 40)
 
         self._sock = None
@@ -97,7 +97,6 @@ class SBSAsterixGateway:
                 if DEBUG:
                     print(f"Received SBS message: {line_str}")
                 
-                # Ваша логика обработки
                 encoded_packet = process_sbs_to_asterix(line_str)
                 if self.udp_socket and encoded_packet:
                     self.udp_socket.sendto(encoded_packet, (self.tx_host, self.tx_port))

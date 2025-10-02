@@ -1,13 +1,18 @@
 from pyModeS.decoder import adsb
 from pyModeS.decoder import bds
+import time
 
 from asterix import AsterixCat021Message
 
 from globals_app import (
     SAC, SIC,
-    LAT_REF, LON_REF, LAT_LON_RANGE, POSITION_LIMIT
+    LAT_REF, LON_REF, 
+    POSITION_LIMIT, LAT_RANGE_PAIRS, LON_RANGE_PAIRS,
     CACHE_TIMEOUT, DEBUG
 )
+
+aircraft_status_cache = {}
+CACHE_EXPIRY_SECONDS = 5 * 60 # 5 minutes
 
 position_cache = {}
 
@@ -61,12 +66,24 @@ def process_adsb_to_asterix(msg, timestamp):
         elif 1 <= tc <= 4:
             callsign = bds.bds08.callsign(msg).strip()
             emitter_category = bds.bds08.category(msg)
+
+        if icao in aircraft_status_cache:
+            if time.time() - aircraft_status_cache[icao]['timestamp'] > CACHE_EXPIRY_SECONDS:
+                del aircraft_status_cache[icao]
+            else:
+                aircraft_status_cache[icao]['timestamp'] = time.time()
+                return aircraft_status_cache[icao]['in_zone']
             
         if lat is not None and lon is not None and POSITION_LIMIT:
-            if not ((LAT_REF - LAT_LON_RANGE <= lat <= LAT_REF + LAT_LON_RANGE and
-                LON_REF - LAT_LON_RANGE <= lon <= LON_REF + LAT_LON_RANGE)):
-                print(f"Position out of range: {lat}, {lon}")
-                return
+            if POSITION_LIMIT:
+                verdict = False
+                for (min_lat, max_lat), (min_lon, max_lon) in zip(LAT_RANGE_PAIRS, LON_RANGE_PAIRS):
+                    if min_lat <= lat <= max_lat and min_lon <= lon <= max_lon:
+                        verdict = True
+                        break
+                aircraft_status_cache[icao] = {'in_zone': verdict, 'timestamp': time.time()}
+                if not verdict:
+                    return
 
         asterix_packet = AsterixCat021Message(
             icao=icao, sac=SAC, sic=SIC, 

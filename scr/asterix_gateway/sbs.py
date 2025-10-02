@@ -1,10 +1,15 @@
 import datetime
+import time
 from asterix import AsterixCat021Message
 
 from globals_app import (
     SAC, SIC, DEBUG, DEV,
-    LAT_REF, LON_REF, LAT_LON_RANGE, POSITION_LIMIT
+    LAT_RANGE_PAIRS, LON_RANGE_PAIRS, POSITION_LIMIT
 )
+
+aircraft_status_cache = {}
+CACHE_EXPIRY_SECONDS = 5 * 60 # 5 minutes
+# -------------------------
 
 def process_sbs_to_asterix(line: str):
     if not line or not line.startswith('MSG'):
@@ -39,14 +44,27 @@ def process_sbs_to_asterix(line: str):
         if len(parts) > 8 and parts[8]:
             emitter_category = _map_aircraft_type_to_category(parts[8])
 
+        if icao24 in aircraft_status_cache:
+            if time.time() - aircraft_status_cache[icao24]['timestamp'] > CACHE_EXPIRY_SECONDS:
+                del aircraft_status_cache[icao24]
+            else:
+                aircraft_status_cache[icao24]['timestamp'] = time.time()
+                return aircraft_status_cache[icao24]['in_zone']
+
         if latitude is not None and longitude is not None:
             if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
                 print(f"Invalid position: {latitude}, {longitude}")
                 return
-            if POSITION_LIMIT and not ((LAT_REF - LAT_LON_RANGE <= latitude <= LAT_REF + LAT_LON_RANGE and
-                LON_REF - LAT_LON_RANGE <= longitude <= LON_REF + LAT_LON_RANGE)):
-                print(f"Position out of range: {latitude}, {longitude}")
-                return
+            
+            if POSITION_LIMIT:
+                verdict = False
+                for (min_lat, max_lat), (min_lon, max_lon) in zip(LAT_RANGE_PAIRS, LON_RANGE_PAIRS):
+                    if min_lat <= latitude <= max_lat and min_lon <= longitude <= max_lon:
+                        verdict = True
+                        break
+                aircraft_status_cache[icao24] = {'in_zone': verdict, 'timestamp': time.time()}
+                if not verdict:
+                    return
 
         msg = AsterixCat021Message(
             icao=icao24,
@@ -64,7 +82,7 @@ def process_sbs_to_asterix(line: str):
 
         packet = msg.encode()
 
-        if DEV:
+        if DEBUG:
             print(f"{msg} - {packet.hex().upper()}")
 
         return packet
@@ -79,8 +97,7 @@ def _map_aircraft_type_to_category(aircraft_type: str) -> int:
         return 4  # Large
     elif aircraft_type.startswith('C'):  # Cessna
         return 1  # Light
-    # ... и так далее
-    return 0  # Unknown
+    return None
 
 
 def _generate_timestamp(date_str: str, time_str: str) -> datetime.datetime | None:
@@ -92,3 +109,38 @@ def _generate_timestamp(date_str: str, time_str: str) -> datetime.datetime | Non
         return datetime.datetime.strptime(full_datetime_str, "%Y/%m/%d %H:%M:%S")
     except ValueError:
         return None
+
+
+def filter_by_aircraft_state(sbs_string: str) -> bool:
+    try:
+        parts = sbs_string.split(',')
+        if parts[0] != 'MSG' or len(parts) < 5:
+            return False
+
+        icao = parts[4]
+        msg_type = parts[1]
+        
+        if icao in aircraft_status_cache:
+            if time.time() - aircraft_status_cache[icao]['timestamp'] > CACHE_EXPIRY_SECONDS:
+                del aircraft_status_cache[icao]
+            else:
+                aircraft_status_cache[icao]['timestamp'] = time.time()
+                return aircraft_status_cache[icao]['in_zone']
+
+        if msg_type == '3' and len(parts) > 15 and parts[14] and parts[15]:
+            lat = float(parts[14])
+            lon = float(parts[15])
+
+            verdict = False
+            for (min_lat, max_lat), (min_lon, max_lon) in zip(LAT_RANGE_PAIRS, LON_RANGE_PAIRS):
+                if min_lat <= lat <= max_lat and min_lon <= lon <= max_lon:
+                    verdict = True
+                    break
+
+            aircraft_status_cache[icao] = {'in_zone': verdict, 'timestamp': time.time()}
+            return verdict
+        
+        return False
+
+    except (ValueError, IndexError):
+        return False

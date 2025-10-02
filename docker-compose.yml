@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  tar1090:
+    image: mikenye/tar1090:latest
+    container_name: tar1090
+    restart: unless-stopped
+    environment:
+      - READSB_DEVICE_TYPE=none
+      - READSB_NET_CONNECTOR=172.17.0.1,5002,sbs_in
+      - TZ=Europe/Warsaw
+    ports:
+      - "8080:80"

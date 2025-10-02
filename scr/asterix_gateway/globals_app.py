@@ -15,8 +15,13 @@ ASTERIX_PORT = envsh.read_env('ASTERIX_PORT', int)
 # ======== Calibration Settings ========
 LAT_REF = envsh.read_env('LAT_REF', float)
 LON_REF = envsh.read_env('LON_REF', float)
-LAT_LON_RANGE = envsh.read_env('LAT_LON_RANGE', float)
+
 POSITION_LIMIT = envsh.read_env('POSITION_LIMIT', int)  # 0 - off, 1 - on
+LAT_RANGE_PAIRS = envsh.read_env('LAT_RANGE_PAIRS', list[float])
+LAT_RANGE_PAIRS = list(zip(LAT_RANGE_PAIRS[::2], LAT_RANGE_PAIRS[1::2]))
+LON_RANGE_PAIRS = envsh.read_env('LON_RANGE_PAIRS', list[float])
+LON_RANGE_PAIRS = list(zip(LON_RANGE_PAIRS[::2], LON_RANGE_PAIRS[1::2]))
+
 SAC = envsh.read_env('SAC', int)
 SIC = envsh.read_env('SIC', int)
 SERVICE_ID = envsh.read_env('SERVICE_ID', int)
