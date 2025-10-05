@@ -1,32 +1,25 @@
 # -*- coding: utf-8 -*-
 
-from gateway import AdsbAsterixGateway, SBSAsterixGateway
+from gateway.gateway import Gateway
+from gateway.listener import BeastListener
+from gateway.sender import UdpSbsSender
+
 from globals_app import (
-    GATEWAY_TYPE,
     DUMP_HOST, DUMP_PORT,
     ASTERIX_HOST, ASTERIX_PORT,
 )
 
 if __name__ == "__main__":
-    client = None
+    listener = BeastListener(source_host=DUMP_HOST, source_port=DUMP_PORT)
+    sender = UdpSbsSender(target_host=ASTERIX_HOST, target_port=ASTERIX_PORT)
+
+    gateway = Gateway(listener=listener, sender=sender)
     try:
-        match GATEWAY_TYPE:
-            case 'BEAST':
-                client = AdsbAsterixGateway(
-                    DUMP_HOST, DUMP_PORT, 
-                    ASTERIX_HOST, ASTERIX_PORT
-                )
-            case 'SBS':
-                client = SBSAsterixGateway(
-                    DUMP_HOST, DUMP_PORT, 
-                    ASTERIX_HOST, ASTERIX_PORT
-                )
         print("Press Ctrl+C for exit")
-        client.run()
+        gateway.start()
     except KeyboardInterrupt:
         print("\nInterrupt...")
     except Exception as e:
         print(f"Error: {e}")
     finally:
-        if client:
-            client.close()
+        gateway.stop()

@@ -2,35 +2,44 @@ from pyModeS.decoder import adsb
 from pyModeS.decoder import bds
 import time
 
-from asterix import AsterixCat021Message
+from aircraft_data import AircraftData, VelocityData
 
 from globals_app import (
-    SAC, SIC,
     LAT_REF, LON_REF, 
     POSITION_LIMIT, LAT_RANGE_PAIRS, LON_RANGE_PAIRS,
-    CACHE_TIMEOUT, DEBUG
+    CACHE_TIMEOUT
 )
 
 aircraft_status_cache = {}
-CACHE_EXPIRY_SECONDS = 5 * 60 # 5 minutes
-
 position_cache = {}
 
-def process_adsb_to_asterix(msg, timestamp):
-    if DEBUG:
-        print(f"Processing message: {msg}")
+def process_adsb(msg, timestamp) -> AircraftData | None:
     try:
         icao = adsb.icao(msg)
         tc = adsb.typecode(msg)
-        
-        lat, lon = None, None
-        velocity = None
+
+        lat = None
+        lon = None
         altitude = None
+        velocity = None
         callsign = None
         emitter_category = None
+        speed = None
+        track = None
+        vr = None
+        speed_type = None
+        position = None
 
         if tc == 19:
-            velocity = adsb.velocity(msg)
+            velocity_tuple = adsb.velocity(msg)
+            if velocity_tuple:
+                speed, track, vr, speed_type = velocity_tuple
+                velocity = VelocityData(
+                    speed=int(speed),
+                    track=track,
+                    vertical_rate=vr,
+                    speed_type=speed_type
+                )
         elif 9 <= tc <= 18:
             oe = adsb.oe_flag(msg)
             
@@ -68,7 +77,7 @@ def process_adsb_to_asterix(msg, timestamp):
             emitter_category = bds.bds08.category(msg)
 
         if icao in aircraft_status_cache:
-            if time.time() - aircraft_status_cache[icao]['timestamp'] > CACHE_EXPIRY_SECONDS:
+            if time.time() - aircraft_status_cache[icao]['timestamp'] > CACHE_TIMEOUT:
                 del aircraft_status_cache[icao]
             else:
                 aircraft_status_cache[icao]['timestamp'] = time.time()
@@ -85,17 +94,15 @@ def process_adsb_to_asterix(msg, timestamp):
                 if not verdict:
                     return
 
-        asterix_packet = AsterixCat021Message(
-            icao=icao, sac=SAC, sic=SIC, 
+        aircraft_data = AircraftData(
+            icao=icao,
             lat=lat, lon=lon, 
-            altitude_ft=altitude, velocity=velocity, 
-            callsign=callsign, emitter_category=emitter_category
+            altitude_ft=altitude, 
+            velocity=velocity, 
+            callsign=callsign, 
+            emitter_category=emitter_category
         )
-        encoded_packet = asterix_packet.encode()
-        
-        if DEBUG:
-            print(f"{asterix_packet} - {encoded_packet.hex().upper()}")
 
-        return encoded_packet
+        return aircraft_data
     except Exception as e:
         print(f"Error processing message {msg}: {e}")

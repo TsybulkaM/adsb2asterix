@@ -1,5 +1,5 @@
 import struct
-
+from aircraft_data import AircraftData
 
 class AsterixCat021Message:
     _flight_status_map = {
@@ -25,28 +25,23 @@ class AsterixCat021Message:
         'emitter_category':       {'num': 30, 'handler': '_encode_emitter_category'},
     }
 
-    def __init__(self, icao, sac, sic, lat=None, lon=None, altitude_ft=None, velocity=None, 
-                callsign=None, emitter_category=None, squawk=None, flight_status_code=None
-        ):
-        self.icao = icao
-        self.sac = sac
-        self.sic = sic
-        self.lat = lat
-        self.lon = lon
-        self.altitude_ft = altitude_ft
-        self.velocity = velocity
-        self.callsign_str = callsign
-        self.emitter_category = emitter_category
-        self.squawk = squawk
-        #self.flight_status_code = flight_status_code
-        self.flight_status_code = None
+    def __init__(self, aircraft_data: AircraftData):
+        self.aircraft_data = aircraft_data
 
     def __str__(self):
-        return (f"AsterixCat021Message(icao={self.icao}, sac={self.sac}, sic={self.sic}, "
-                f"lat={self.lat}, lon={self.lon}, altitude_ft={self.altitude_ft}, "
-                f"velocity={self.velocity}, callsign={self.callsign_str}, "
-                f"emitter_category={self.emitter_category}, squawk={self.squawk}, "
-                f"flight_status_code={self.flight_status_code} [{self._flight_status_map.get(self.flight_status_code, "Unknown")}])"
+        return (
+                f"AsterixCat021Message:"
+                f"  icao={self.aircraft_data.icao}\n"
+                f"  sac={self.aircraft_data.sac}\n"
+                f"  sic={self.aircraft_data.sic}\n"
+                f"  lat={self.aircraft_data.lat}\n"
+                f"  lon={self.aircraft_data.lon}\n"
+                f"  altitude_ft={self.aircraft_data.altitude_ft}\n"
+                f"  velocity={self.aircraft_data.velocity}\n"
+                f"  callsign={self.aircraft_data.callsign}\n"
+                f"  emitter_category={self.aircraft_data.emitter_category}\n"
+                f"  squawk={self.aircraft_data.squawk}\n"
+                f"  flight_status_code={self.aircraft_data.flight_status_code}\n"
                 )
 
     def encode(self):
@@ -54,34 +49,34 @@ class AsterixCat021Message:
         
         present_items.add(1)
 
-        if self.flight_status_code is not None:
+        if self.aircraft_data.flight_status_code is not None:
             present_items.add(2)
 
         present_items.add(11)
 
-        if self.lat is not None and self.lon is not None: 
+        if self.aircraft_data.lat is not None and self.aircraft_data.lon is not None: 
             present_items.add(6)
 
-        if self.altitude_ft is not None:
+        if self.aircraft_data.altitude_ft is not None:
             present_items.add(16)
 
-        if self.squawk is not None:
+        if self.aircraft_data.squawk is not None:
             present_items.add(19)
 
-        if self.flight_status_code is not None:
+        if self.aircraft_data.flight_status_code is not None:
             present_items.add(23)
 
-        if self.callsign_str is not None: 
+        if self.aircraft_data.callsign is not None: 
             present_items.add(29)
 
-        if self.velocity is not None:
+        if self.aircraft_data.velocity is not None:
             present_items.add(26)
 
-            vert_rate = self.velocity[2]
-            if vert_rate != 0:
+            vert_rate = self.aircraft_data.velocity.vertical_rate
+            if vert_rate is not None and vert_rate != 0:
                 present_items.add(24)
 
-        if self.emitter_category is not None:
+        if self.aircraft_data.emitter_category is not None:
             present_items.add(30)
 
         # --- FSPEC ---
@@ -113,28 +108,33 @@ class AsterixCat021Message:
         return bytes(packet)
 
     # --- Methods-encoders ---
-    def _encode_source_id(self): return struct.pack('>BB', self.sac, self.sic)
-    def _encode_icao(self): return int(self.icao, 16).to_bytes(3, 'big')
+    def _encode_source_id(self): 
+        return struct.pack('>BB', self.aircraft_data.sac, self.aircraft_data.sic)
+
+    def _encode_icao(self): 
+        return int(self.aircraft_data.icao, 16).to_bytes(3, 'big')
+
     def _encode_position(self):
         lsb = 180.0 / (2**23)
-        lat_enc = int(self.lat / lsb).to_bytes(3, 'big', signed=True)
-        lon_enc = int(self.lon / lsb).to_bytes(3, 'big', signed=True)
+        lat_enc = int(self.aircraft_data.lat / lsb).to_bytes(3, 'big', signed=True)
+        lon_enc = int(self.aircraft_data.lon / lsb).to_bytes(3, 'big', signed=True)
         return lat_enc + lon_enc
+
     def _encode_altitude(self):
-        return int(self.altitude_ft / 6.25).to_bytes(2, 'big', signed=True)
+        return int(self.aircraft_data.altitude_ft / 6.25).to_bytes(2, 'big', signed=True)
 
     def _encode_callsign(self):
         char_map = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ## ###############0123456789######"
         encoded = 0
-        callsign = self.callsign_str.upper().strip().replace('_', ' ').ljust(8, ' ')[:8]
+        callsign = self.aircraft_data.callsign.upper().strip().replace('_', ' ').ljust(8, ' ')[:8]
         for char in callsign:
             encoded <<= 6
             encoded |= char_map.index(char)
         return encoded.to_bytes(6, 'big')
 
     def _encode_ground_vector(self):
-        speed_kts = self.velocity[0]
-        track_deg = self.velocity[1]
+        speed_kts = self.aircraft_data.velocity.speed
+        track_deg = self.aircraft_data.velocity.track
 
         try:
             speed_resolution = 2**-14 # NM/s
@@ -151,23 +151,20 @@ class AsterixCat021Message:
             return b'\x00\x00\x00\x00'
 
     def _encode_vertical_rate(self):
-        vert_rate_fpm = self.velocity[2]
-        
         resolution = 6.25
-        scaled_vert_rate = int(vert_rate_fpm / resolution)
+        scaled_vert_rate = int(self.aircraft_data.velocity.vertical_rate / resolution)
         
         return struct.pack('>h', scaled_vert_rate)
 
     def _encode_emitter_category(self):
-        return struct.pack('>B', self.emitter_category)
+        return struct.pack('>B', self.aircraft_data.emitter_category)
     
     def _encode_squawk(self):
-        return int(self.squawk).to_bytes(2, 'big')
+        return int(self.aircraft_data.squawk).to_bytes(2, 'big')
 
     def _encode_flight_status_code(self):
         target_status = 0
-
-        if self.flight_status_code in [2, 3, 4]:
+        if self.aircraft_data.flight_status_code in [2, 3, 4]:
             ps_mask = (1 << 4)
             target_status |= ps_mask
 
@@ -176,11 +173,11 @@ class AsterixCat021Message:
     def _encode_trd(self):
         target_report_descriptor = 0
 
-        if self.flight_status_code in [1, 3]:
+        if self.aircraft_data.flight_status_code in [1, 3]:
             vs_mask = (1 << 2)
             target_report_descriptor |= vs_mask
 
-        if self.flight_status_code in [4, 5]:
+        if self.aircraft_data.flight_status_code in [4, 5]:
             spi_mask = (1 << 3)
             target_report_descriptor |= spi_mask
             
