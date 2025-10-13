@@ -1,7 +1,7 @@
 import struct
-from aircraft_data import AircraftData
+from .aircraft_data import AircraftData, IAircraftMessage
 
-class AsterixCat021Message:
+class AsterixCat021Message(IAircraftMessage):
     _flight_status_map = {
         0: "Normal, Airborne",
         1: "Normal, On-ground",
@@ -24,9 +24,6 @@ class AsterixCat021Message:
         'callsign':               {'num': 29, 'handler': '_encode_callsign'},
         'emitter_category':       {'num': 30, 'handler': '_encode_emitter_category'},
     }
-
-    def __init__(self, aircraft_data: AircraftData):
-        self.aircraft_data = aircraft_data
 
     def __str__(self):
         return (
@@ -182,3 +179,6 @@ class AsterixCat021Message:
             target_report_descriptor |= spi_mask
             
         return target_report_descriptor.to_bytes(1, 'big')
+
+    def decode(self, data: bytes) -> AircraftData | None:
+        return None

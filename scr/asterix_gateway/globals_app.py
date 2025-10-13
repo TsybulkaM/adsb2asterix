@@ -9,8 +9,8 @@ GATEWAY_TYPE = envsh.read_env('GATEWAY_TYPE', str)  # 'BEAST' or 'SBS'
 
 DUMP_HOST = envsh.read_env('DUMP_HOST', str)
 DUMP_PORT = envsh.read_env('DUMP_PORT', int)
-ASTERIX_HOST = envsh.read_env('ASTERIX_HOST', str)
-ASTERIX_PORT = envsh.read_env('ASTERIX_PORT', int)
+UDP_HOST = envsh.read_env('UDP_HOST', str)
+UDP_PORT = envsh.read_env('UDP_PORT', int)
 
 # ======== Calibration Settings ========
 LAT_REF = envsh.read_env('LAT_REF', float)

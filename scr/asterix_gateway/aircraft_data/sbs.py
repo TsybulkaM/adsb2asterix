@@ -1,12 +1,8 @@
 import datetime
-import time
-from aircraft_data import AircraftData, VelocityData
+from .aircraft_data import AircraftData, VelocityData, IAircraftMessage
 
 
-class SbsMessage:
-    def __init__(self, aircraft_data: AircraftData):
-        self.aircraft_data = aircraft_data
-
+class SbsMessage(IAircraftMessage):
     def _is_in_zone(self, lat: float, lon: float) -> bool:
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
             print(f"Warning: Invalid position received: {lat}, {lon}")
@@ -49,11 +45,14 @@ class SbsMessage:
                 spi = int(parts[20]) if parts[20] else 0
                 flight_status_code = (alert << 1) | spi
 
-            velocity = VelocityData(
-                speed=ground_speed,
-                track=track,
-                vertical_rate=vertical_rate
-            )
+            velocity = None
+            if ground_speed and track and vertical_rate:
+                velocity = VelocityData(
+                    speed=ground_speed,
+                    track=track,
+                    vertical_rate=vertical_rate,
+                    speed_type='GS'
+                )
 
             return AircraftData(
                 icao=icao24,
@@ -65,11 +64,12 @@ class SbsMessage:
                 velocity=velocity,
                 callsign=callsign,
                 squawk=squawk,
-                flight_status_code=flight_status_code,
+                #flight_status_code=flight_status_code,
                 timestamp=datetime.datetime.now(datetime.timezone.utc)
             )
 
         except (ValueError, IndexError) as e:
+            print(f"Error decoding SBS message: {e}")
             return None
 
     def encode(self) -> str:
