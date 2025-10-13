@@ -1,6 +1,7 @@
 import datetime
 from .aircraft_data import AircraftData, VelocityData, IAircraftMessage
 
+# http://woodair.net/sbs/article/barebones42_socket_data.htm
 
 class SbsMessage(IAircraftMessage):
     def _is_in_zone(self, lat: float, lon: float) -> bool:
@@ -30,6 +31,10 @@ class SbsMessage(IAircraftMessage):
                 return None
 
             msg_type = int(parts[1])
+            date_generated = parts[6] if parts[6] else None
+            time_generated = parts[7] if parts[7] else None
+            date_logged = parts[8] if parts[8] else None
+            time_logged = parts[9] if parts[9] else None
             latitude = float(parts[14]) if parts[14] else None
             longitude = float(parts[15]) if parts[15] else None
             callsign = parts[10].strip() or None if msg_type == 1 and parts[10] else None
@@ -38,6 +43,7 @@ class SbsMessage(IAircraftMessage):
             track = float(parts[13]) if parts[13] else None
             vertical_rate = int(parts[16]) if parts[16] else None
             squawk = parts[17] if msg_type == 6 and parts[17] else None
+            emitter_category = int(parts[18]) if parts[18] else None
 
             flight_status_code = None
             if msg_type in (5, 6, 7) and len(parts) > 20:
@@ -64,8 +70,12 @@ class SbsMessage(IAircraftMessage):
                 velocity=velocity,
                 callsign=callsign,
                 squawk=squawk,
+                emitter_category=emitter_category,
                 #flight_status_code=flight_status_code,
-                timestamp=datetime.datetime.now(datetime.timezone.utc)
+                date_generated=date_generated,
+                time_generated=time_generated,
+                date_logged=date_logged,
+                time_logged=time_logged,
             )
 
         except (ValueError, IndexError) as e:
@@ -78,10 +88,22 @@ class SbsMessage(IAircraftMessage):
 
         parts[0] = 'MSG'
         parts[1] = '3'
+        parts[2] = '0'
+        parts[3] = '0'
         parts[4] = self.aircraft_data.icao
-        parts[6] = now.strftime('%Y/%m/%d')
-        parts[7] = now.strftime('%H:%M:%S.') + f"{now.microsecond // 1000:03d}"
 
+        if self.aircraft_data.date_generated is not None:
+            parts[6] = self.aircraft_data.date_generated
+        if self.aircraft_data.time_generated is not None:
+            parts[7] = self.aircraft_data.time_generated
+        if self.aircraft_data.date_logged is not None:
+            parts[8] = self.aircraft_data.date_logged
+        if self.aircraft_data.time_logged is not None:
+            parts[9] = self.aircraft_data.time_logged
+
+        if self.aircraft_data.callsign:
+            parts[1] = '1'
+            parts[10] = self.aircraft_data.callsign.ljust(8, '_')
         if self.aircraft_data.altitude_ft is not None:
             parts[11] = str(self.aircraft_data.altitude_ft)
         if self.aircraft_data.lat is not None:
@@ -97,4 +119,7 @@ class SbsMessage(IAircraftMessage):
             if self.aircraft_data.velocity.vertical_rate is not None:
                 parts[16] = str(self.aircraft_data.velocity.vertical_rate)
 
+        if self.aircraft_data.squawk:
+            parts[17] = str(self.aircraft_data.squawk).zfill(4)
+            
         return ','.join(parts)

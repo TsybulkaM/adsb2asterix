@@ -23,6 +23,10 @@ class AircraftData(BaseModel):
     emitter_category: Optional[int] = None
     squawk: Optional[int] = None
     flight_status_code: Optional[int] = None
+    date_generated: Optional[str] = None
+    time_generated: Optional[str] = None
+    date_logged: Optional[str] = None
+    time_logged: Optional[str] = None
 
 
 class IAircraftMessage(ABC):
